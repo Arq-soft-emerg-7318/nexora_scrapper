@@ -21,6 +21,21 @@ class ApiPipeline:
         
     def process_item(self, item, spider):
         """Send each article as a Post to the API"""
+        
+        # VALIDACIÓN FINAL: Verificar título y body antes de enviar
+        title = item.get('title', '').strip()
+        content_text = item.get('content_text', '').strip()
+        
+        # Rechazar si no hay título válido
+        if not title or len(title) == 0:
+            spider.logger.warning(f"⚠️  Pipeline - Post rechazado sin título: {item.get('source_url', 'unknown')}")
+            return item
+        
+        # Rechazar si no hay contenido suficiente
+        if not content_text or len(content_text) < 100:
+            spider.logger.warning(f"⚠️  Pipeline - Post rechazado sin contenido suficiente: {title[:50]}")
+            return item
+        
         try:
             # Prepare headers
             headers = {
@@ -32,7 +47,7 @@ class ApiPipeline:
                 headers['Authorization'] = f'Bearer {self.api_token}'
             
             # Preparar el body del post (content_text limitado)
-            body_content = item.get('content_text', '')
+            body_content = content_text
             if not body_content:
                 body_content = item.get('summary', '')
             

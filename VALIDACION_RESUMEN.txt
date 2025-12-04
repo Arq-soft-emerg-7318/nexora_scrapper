@@ -1,0 +1,106 @@
+"""
+═══════════════════════════════════════════════════════════════════════
+    VALIDACIÓN DE ARTÍCULOS - NEXORA SCRAPER
+═══════════════════════════════════════════════════════════════════════
+
+✅ IMPLEMENTACIÓN COMPLETADA
+
+═══════════════════════════════════════════════════════════════════════
+  CRITERIOS DE VALIDACIÓN
+═══════════════════════════════════════════════════════════════════════
+
+1. TÍTULO OBLIGATORIO
+   ❌ Rechazado si:
+      - Es null, vacío ("") o solo espacios ("   ")
+      - No existe el elemento en el HTML
+   
+   ✅ Aceptado si:
+      - Tiene al menos 1 carácter válido después de trim()
+
+2. CONTENIDO OBLIGATORIO
+   ❌ Rechazado si:
+      - Es null o vacío
+      - Tiene menos de 100 caracteres
+   
+   ✅ Aceptado si:
+      - Tiene al menos 100 caracteres de texto real
+
+═══════════════════════════════════════════════════════════════════════
+  CAPAS DE VALIDACIÓN
+═══════════════════════════════════════════════════════════════════════
+
+CAPA 1: SPIDER (mining_spider.py / xataka_spider.py)
+├─ Valida ANTES de crear el item
+├─ Evita procesamiento innecesario
+└─ Log: "⚠️  Artículo rechazado - Sin título/Contenido insuficiente"
+
+CAPA 2: PIPELINE (pipelines.py)
+├─ Valida ANTES de enviar a la API
+├─ Última línea de defensa
+└─ Log: "⚠️  Pipeline - Post rechazado sin título/contenido"
+
+═══════════════════════════════════════════════════════════════════════
+  EJEMPLOS DE LOGS
+═══════════════════════════════════════════════════════════════════════
+
+✅ ARTÍCULO VÁLIDO (aceptado):
+   [mining_spider] INFO: ✅ Artículo válido extraído: Copper price sets new record...
+   [mining_spider] INFO: ✓ Post creado: Copper price sets new record...
+
+❌ SIN TÍTULO (rechazado):
+   [mining_spider] WARNING: ⚠️  Artículo rechazado - Sin título: https://...
+
+❌ SIN CONTENIDO (rechazado):
+   [mining_spider] WARNING: ⚠️  Artículo rechazado - Contenido insuficiente: Short Article...
+
+❌ PIPELINE FINAL (rechazado):
+   [mining_spider] WARNING: ⚠️  Pipeline - Post rechazado sin título: unknown
+
+═══════════════════════════════════════════════════════════════════════
+  RESULTADO GARANTIZADO
+═══════════════════════════════════════════════════════════════════════
+
+🎯 SOLO SE GUARDARÁN EN LA BD:
+   ✓ Posts con TÍTULO válido (no vacío)
+   ✓ Posts con BODY de al menos 100 caracteres
+   ✓ Posts que pasen ambas capas de validación
+
+🚫 NO SE GUARDARÁN:
+   ✗ Posts sin título
+   ✗ Posts con título vacío o solo espacios
+   ✗ Posts sin contenido o muy corto (< 100 chars)
+
+═══════════════════════════════════════════════════════════════════════
+  EJECUCIÓN
+═══════════════════════════════════════════════════════════════════════
+
+# Ejecutar spider con validación:
+scrapy crawl mining_spider
+scrapy crawl xataka_spider
+
+# Con logs visibles:
+scrapy crawl mining_spider -s LOG_LEVEL=INFO
+
+# Limitar cantidad (testing):
+scrapy crawl mining_spider -s CLOSESPIDER_ITEMCOUNT=5
+
+═══════════════════════════════════════════════════════════════════════
+  ARCHIVOS MODIFICADOS
+═══════════════════════════════════════════════════════════════════════
+
+✓ news_scraper/spiders/mining_spider.py
+  - Validación de título (línea ~60)
+  - Validación de contenido (línea ~65)
+  - Log de artículos válidos (línea ~88)
+
+✓ news_scraper/spiders/xataka_spider.py
+  - Validación de título (línea ~60)
+  - Validación de contenido (línea ~65)
+  - Log de artículos válidos (línea ~88)
+
+✓ news_scraper/pipelines.py
+  - Validación final título (línea ~20)
+  - Validación final contenido (línea ~26)
+  - Return item si rechazado (no envía a API)
+
+═══════════════════════════════════════════════════════════════════════
