@@ -58,8 +58,19 @@ class XatakaSpider(scrapy.Spider):
                     'alt': img_alt or ''
                 })
         
-        yield {
-            'title': title.strip() if title else 'Sin título',
+        # VALIDACIÓN: Rechazar artículos sin título válido
+        if not title or len(title.strip()) == 0:
+            self.logger.warning(f"⚠️  Artículo rechazado - Sin título: {response.url}")
+            return
+        
+        # VALIDACIÓN: Rechazar artículos sin contenido suficiente (mínimo 100 caracteres)
+        if not content_text or len(content_text.strip()) < 100:
+            self.logger.warning(f"⚠️  Artículo rechazado - Contenido insuficiente: {title[:50]}")
+            return
+        
+        # Si pasa validación, crear el item
+        article = {
+            'title': title.strip(),
             'author': author.strip() if author else 'Desconocido',
             'publishedAt': published_at or datetime.utcnow().isoformat() + 'Z',
             'content_html': content_html,
@@ -72,3 +83,6 @@ class XatakaSpider(scrapy.Spider):
             'language': 'es',
             'scraped_at': datetime.utcnow().isoformat() + 'Z'
         }
+        
+        self.logger.info(f"✅ Artículo válido extraído: {title[:50]}...")
+        yield article

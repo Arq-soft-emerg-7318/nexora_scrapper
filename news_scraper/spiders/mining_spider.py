@@ -25,23 +25,28 @@ class MiningSpider(scrapy.Spider):
         """Parse individual article page"""
         
         # Extract title
-        title = response.css('h1.entry-title::text').get()
-        if not title:
-            title = response.css('h1::text').get()
+        title = response.css('h1.single-title::text, h1.entry-title::text, h1::text').get()
         
         # Extract author
-        author = response.css('.author a::text').get()
-        if not author:
-            author = response.css('[rel="author"]::text').get()
+        author = response.css('.post-meta a[href*="/author"]::text, .author a::text, [rel="author"]::text').get()
         
         # Extract published date
-        published_at = response.css('time::attr(datetime)').get()
+        published_at = response.css('time::attr(datetime), meta[property="article:published_time"]::attr(content)').get()
         
-        # Extract content
-        content_paragraphs = response.css('.entry-content p::text, .entry-content p *::text').getall()
+        # Extract content - mejorado para mining.com
+        content_paragraphs = response.css(
+            'article .content p::text, '
+            'article .content p *::text, '
+            '.post-inner-content p::text, '
+            '.post-inner-content p *::text, '
+            '.entry-content p::text, '
+            '.entry-content p *::text'
+        ).getall()
         content_text = ' '.join([p.strip() for p in content_paragraphs if p.strip()])
         
-        content_html = ''.join(response.css('.entry-content p').getall())
+        content_html = ''.join(response.css(
+            'article .content, .post-inner-content, .entry-content'
+        ).getall())
         
         # Extract summary
         summary = content_text[:250] + '...' if len(content_text) > 250 else content_text
@@ -60,8 +65,19 @@ class MiningSpider(scrapy.Spider):
                     'alt': img_alt or ''
                 })
         
-        yield {
-            'title': title.strip() if title else 'No title',
+        # VALIDACIÓN: Rechazar artículos sin título válido
+        if not title or len(title.strip()) == 0:
+            self.logger.warning(f"⚠️  Artículo rechazado - Sin título: {response.url}")
+            return
+        
+        # VALIDACIÓN: Rechazar artículos sin contenido suficiente (mínimo 100 caracteres)
+        if not content_text or len(content_text.strip()) < 100:
+            self.logger.warning(f"⚠️  Artículo rechazado - Contenido insuficiente: {title[:50]}")
+            return
+        
+        # Si pasa validación, crear el item
+        article = {
+            'title': title.strip(),
             'author': author.strip() if author else 'Unknown',
             'publishedAt': published_at or datetime.utcnow().isoformat() + 'Z',
             'content_html': content_html,
@@ -74,3 +90,6 @@ class MiningSpider(scrapy.Spider):
             'language': 'en',
             'scraped_at': datetime.utcnow().isoformat() + 'Z'
         }
+        
+        self.logger.info(f"✅ Artículo válido extraído: {title[:50]}...")
+        yield article
