@@ -26,7 +26,7 @@ def run_spider(spider_name: str):
         
         # Ejecutar scrapy crawl en un subproceso
         result = subprocess.run(
-            [os.path.join("venv", "Scripts", "scrapy.exe"), "crawl", spider_name],
+            ["scrapy", "crawl", spider_name],
             capture_output=True,
             text=True,
             timeout=300  # 5 minutos timeout
@@ -131,13 +131,13 @@ async def scrape_all(background_tasks: BackgroundTasks):
             
             # Xataka
             subprocess.run(
-                [os.path.join("venv", "Scripts", "scrapy.exe"), "crawl", "xataka_spider"],
+                ["scrapy", "crawl", "xataka_spider"],
                 timeout=300
             )
             
             # Mining
             subprocess.run(
-                [os.path.join("venv", "Scripts", "scrapy.exe"), "crawl", "mining_spider"],
+                ["scrapy", "crawl", "mining_spider"],
                 timeout=300
             )
             
