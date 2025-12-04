@@ -27,3 +27,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Digital Ocean
+.do/deploy.template.yaml
